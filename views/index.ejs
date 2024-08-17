@@ -9,7 +9,50 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
-    <h1 class="text-center text-4xl">KYM</h1>
+
+    <script>
+        function like(vidid, title){
+            let likedSongs = JSON.parse(localStorage.getItem('likedSongs')) || [];
+            if(!likedSongs.some(song => song.vidid === vidid)){
+                likedSongs.push({ vidid, title });
+                localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
+                window.location.reload();
+            }
+        }
+        function unlike(vidid){
+            let likedSongs = JSON.parse(localStorage.getItem('likedSongs')) || [];
+            let idx = likedSongs.findIndex(song => song.vidid === vidid);
+            likedSongs.splice(idx, 1);
+            localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
+            window.location.reload(); 
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+        let likedSongs = JSON.parse(localStorage.getItem('likedSongs')) || [];
+        let likedSongsContainer = document.getElementById('liked-songs-container');
+        likedSongs.forEach(song => {
+            let songButton = document.createElement('form');
+            songButton.method = 'POST';
+            songButton.action = '/stream';
+
+            let button = document.createElement('button');
+            button.name = 'video';
+            button.value = song.vidid;
+            button.type = 'submit';
+            button.className = 'block p-2 my-2 border border-gray-300';
+            button.innerHTML = song.title;
+            songButton.appendChild(button);
+            likedSongsContainer.appendChild(songButton);
+
+            let unlikeButton = document.createElement('button');
+            unlikeButton.onclick = function() {
+                unlike(song.vidid);
+            };
+            unlikeButton.innerHTML = 'unlike';
+            likedSongsContainer.appendChild(unlikeButton);
+        });
+    });
+    </script>
+    <h1 class="text-center text-4xl"><a href="/">KYM</a></h1>
     <div class="container mx-auto py-4">
         <form action="/search" method="POST" class="p-2 flex justify-center">
             <input type="text" id="search-box" name="search" class="border border-black" placeholder="Search for a Song!">
@@ -18,13 +61,14 @@
 
         <div id="searchlist">
             <% if (locals.vidlist) { %>
+                <% vidlist.forEach(v => { %>
                 <form method="POST" action="/stream">
-                    <% vidlist.forEach(v => { %>
                         <button name="video" value="<%= v.vidid %>" type="submit" class="block p-2 my-2 border border-gray-300">
                             <%= v.title %>
-                        </button>
-                    <% }); %>
+                        </button> 
                 </form>
+                <button onclick="like('<%= v.vidid %>', '<%= v.title %>')">Like</button>
+                <% }); %>
             <% } %>
         </div>
 
@@ -34,7 +78,7 @@
             <input id="custom-vol" type="range" max="100" min="0" value="50" step="10" class="w-48">
         </div>
         <div id="player" style="display:none;"></div>
-
+        
         <script>
             let player;
             let customPlaying = false;
@@ -71,7 +115,10 @@
                 });
             }
         </script>
-        <% } %>    
+        <% } %>
+        <div id="liked-songs-container" class="container mx-auto py-4">
+            <h2 class="text-2xl">Liked Songs</h2>
+        </div>    
     </div>
 </body>
 </html>

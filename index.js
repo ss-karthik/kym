@@ -27,7 +27,7 @@ app.post("/search", async (req,res)=>{
 });
 
 app.post("/stream", async(req,res)=>{
-    console.log(req.body);
+    console.log(req.body.title);
     res.render("index.ejs", { videolink: req.body.video });
 });
 
