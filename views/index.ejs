@@ -12,11 +12,12 @@
 
     <script>
         function like(vidid, title){
+            title = title.substring(0,20)+"...";
             let likedSongs = JSON.parse(localStorage.getItem('likedSongs')) || [];
             if(!likedSongs.some(song => song.vidid === vidid)){
                 likedSongs.push({ vidid, title });
                 localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
-                window.location.reload();
+                window.location.assign("/");
             }
         }
         function unlike(vidid){
@@ -24,12 +25,13 @@
             let idx = likedSongs.findIndex(song => song.vidid === vidid);
             likedSongs.splice(idx, 1);
             localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
-            window.location.reload(); 
+            window.location.assign("/"); 
         }
         document.addEventListener('DOMContentLoaded', function() {
         let likedSongs = JSON.parse(localStorage.getItem('likedSongs')) || [];
         let likedSongsContainer = document.getElementById('liked-songs-container');
-        likedSongs.forEach(song => {
+        likedSongs.reverse().forEach(song => {
+            let songcontainer = document.createElement('div');
             let songButton = document.createElement('form');
             songButton.method = 'POST';
             songButton.action = '/stream';
@@ -41,14 +43,17 @@
             button.className = 'block p-2 my-2 border border-gray-300';
             button.innerHTML = song.title;
             songButton.appendChild(button);
-            likedSongsContainer.appendChild(songButton);
+            songcontainer.appendChild(songButton);
 
             let unlikeButton = document.createElement('button');
             unlikeButton.onclick = function() {
                 unlike(song.vidid);
             };
+            unlikeButton.className = 'block p-2 my-2 border border-gray-300';
             unlikeButton.innerHTML = 'unlike';
-            likedSongsContainer.appendChild(unlikeButton);
+            songcontainer.appendChild(unlikeButton);
+            songcontainer.className = 'flex flex-wrap gap-10 border border-black justify-between';
+            likedSongsContainer.appendChild(songcontainer);
         });
     });
     </script>
@@ -59,23 +64,31 @@
             <input type="submit" value="Search" class="border border-black">
         </form>
 
-        <div id="searchlist">
+        <div id="searchlist" class="p-4">
             <% if (locals.vidlist) { %>
                 <% vidlist.forEach(v => { %>
-                <form method="POST" action="/stream">
+                <form method="POST" action="/stream" class="flex flex-wrap gap-10 border border-black justify-between items-center">
                         <button name="video" value="<%= v.vidid %>" type="submit" class="block p-2 my-2 border border-gray-300">
                             <%= v.title %>
                         </button> 
+                        <button onclick="like('<%= v.vidid %>', '<%= v.title %>')" class="block p-2 my-2 border border-gray-300">Like</button>
                 </form>
-                <button onclick="like('<%= v.vidid %>', '<%= v.title %>')">Like</button>
+                
                 <% }); %>
             <% } %>
         </div>
 
         <% if (locals.videolink) { %>
-        <div class="flex flex-col justify-center items-center flex-wrap gap-3 py-4">
+        <div class="flex flex-col justify-center items-center flex-wrap gap-3 py-4 px-4">
             <button class="cust-audiobtn text-3xl"><i class="bi bi-play-circle-fill"></i></button>
-            <input id="custom-vol" type="range" max="100" min="0" value="50" step="10" class="w-48">
+            
+            <input type="range" id="seekBar" value="0" min="0" max="100" step="1">
+            <div>
+                <span id="currentTime">0:00</span> / <span id="totalDuration">0:00</span>
+            </div>
+            <div class="flex flex-wrap">
+                <i class="bi bi-volume-down text-4xl"></i><input id="custom-vol" type="range" max="100" min="0" value="70" step="5" class="w-48">
+            </div>
         </div>
         <div id="player" style="display:none;"></div>
         
@@ -84,13 +97,15 @@
             let customPlaying = false;
             let custAudioBtn = document.querySelector(".cust-audiobtn");
             let custVolume = document.querySelector("#custom-vol");
-
+            let seekBar = document.querySelector("#seekBar");
+            let updateInterval;
             function onYouTubeIframeAPIReady() {
                 player = new YT.Player('player', {
                     videoId: "<%= videolink %>",
                     playerVars: { 'playsinline': 1 },
                     events: {
-                        'onReady': onPlayerReady
+                        'onReady': onPlayerReady,
+                        'onStateChange': onPlayerStateChange
                     }
                 });
             }
@@ -110,13 +125,40 @@
                     }
                 });
 
+                seekBar.addEventListener('input', () => {
+                    const newTime = player.getDuration() * (seekBar.value / 100);
+                    player.seekTo(newTime, true);
+                });
                 custVolume.addEventListener('input', function() {
                     player.setVolume(custVolume.value);
                 });
+
+                document.getElementById('totalDuration').textContent = formatTime(player.getDuration());
+            }
+            function onPlayerStateChange(event) {
+                if (event.data == YT.PlayerState.PLAYING) {
+                    updateInterval = setInterval(updateSeekBar, 1000); 
+                } else {
+                    clearInterval(updateInterval);
+                }
+            }
+
+            function updateSeekBar() {
+                const seekBar = document.getElementById('seekBar');
+                const currentTime = player.getCurrentTime();
+                const duration = player.getDuration();
+                seekBar.value = (currentTime / duration) * 100;
+                document.getElementById('currentTime').textContent = formatTime(currentTime);
+                document.getElementById('totalDuration').textContent = formatTime(duration);
+            }
+            function formatTime(seconds) {
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = Math.floor(seconds % 60);
+                return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
             }
         </script>
         <% } %>
-        <div id="liked-songs-container" class="container mx-auto py-4">
+        <div id="liked-songs-container" class="container mx-auto py-4 px-4 gap-2 flex flex-col">
             <h2 class="text-2xl">Liked Songs</h2>
         </div>    
     </div>
