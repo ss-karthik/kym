@@ -17,8 +17,8 @@
             if(!likedSongs.some(song => song.vidid === vidid)){
                 likedSongs.push({ vidid, title });
                 localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
-                window.location.assign("/");
             }
+            window.location.assign("/"); 
         }
         function unlike(vidid){
             let likedSongs = JSON.parse(localStorage.getItem('likedSongs')) || [];
@@ -50,7 +50,7 @@
                 unlike(song.vidid);
             };
             unlikeButton.className = 'block p-2 my-2 border border-gray-300';
-            unlikeButton.innerHTML = 'unlike';
+            unlikeButton.innerHTML = '<i class="bi bi-star-fill"></i>';
             songcontainer.appendChild(unlikeButton);
             songcontainer.className = 'flex flex-wrap gap-10 border border-black justify-between';
             likedSongsContainer.appendChild(songcontainer);
@@ -59,7 +59,7 @@
     </script>
     <h1 class="text-center text-4xl"><a href="/">KYM</a></h1>
     <div class="container mx-auto py-4">
-        <form action="/search" method="POST" class="p-2 flex justify-center">
+        <form action="/search" method="POST" class="p-2 flex justify-center" autocomplete="off">
             <input type="text" id="search-box" name="search" class="border border-black" placeholder="Search for a Song!">
             <input type="submit" value="Search" class="border border-black">
         </form>
@@ -67,19 +67,22 @@
         <div id="searchlist" class="p-4">
             <% if (locals.vidlist) { %>
                 <% vidlist.forEach(v => { %>
-                <form method="POST" action="/stream" class="flex flex-wrap gap-10 border border-black justify-between items-center">
+                <div class="flex flex-wrap gap-10 border border-black justify-between items-center">
+                <form method="POST" action="/stream" class="">
                         <button name="video" value="<%= v.vidid %>" type="submit" class="block p-2 my-2 border border-gray-300">
                             <%= v.title %>
                         </button> 
-                        <button onclick="like('<%= v.vidid %>', '<%= v.title %>')" class="block p-2 my-2 border border-gray-300">Like</button>
-                </form>
-                
+                    </form>
+                    <button onclick="like('<%= v.vidid %>', '<%= v.title %>')" class="block p-2 my-2 border border-gray-300"><i class="bi bi-star"></i></button>
+                </div>
                 <% }); %>
             <% } %>
         </div>
 
         <% if (locals.videolink) { %>
         <div class="flex flex-col justify-center items-center flex-wrap gap-3 py-4 px-4">
+            <h1 class="text-2xl"><%= videotitle %></h1>
+            <button onclick="like('<%= videolink %>', '<%= videotitle %>')" class="block p-2 my-2 border border-gray-300"><i class="bi bi-star"></i></button>
             <button class="cust-audiobtn text-3xl"><i class="bi bi-play-circle-fill"></i></button>
             
             <input type="range" id="seekBar" value="0" min="0" max="100" step="1">

@@ -27,7 +27,8 @@ app.post("/search", async (req,res)=>{
 });
 
 app.post("/stream", async(req,res)=>{
-    res.render("index.ejs", { videolink: req.body.video });
+    const video = await yts( { videoId: req.body.video } );
+    res.render("index.ejs", { videolink: req.body.video, videotitle: video.title  });
 });
 
 
