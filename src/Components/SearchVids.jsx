@@ -1,8 +1,7 @@
 import React, {useEffect, useState} from 'react'
-import axios from "axios";
-const API_URL = "http://localhost:3000";
+import { Search } from 'lucide-react';
 
-const Search = ({setVidlist}) => {
+const SearchVids = ({setVidlist}) => {
     const [input, setInput] = useState("");
     
     async function searchVids(e){
@@ -26,12 +25,12 @@ const Search = ({setVidlist}) => {
     }
   return (
     <div>
-      <form onSubmit={searchVids}>
-        <input type='text' onChange={(e)=>{setInput(e.target.value)}}/>
-        <button type='submit'>Submit</button>
+      <form onSubmit={searchVids} className='flex text-lg items-center gap-4 justify-center flex-wrap'>
+        <input className='border border-slate-300' type='text' onChange={(e)=>{setInput(e.target.value)}}/>
+        <button type='submit'><Search/></button>
       </form>
     </div>
   )
 }
 
-export default Search
+export default SearchVids
